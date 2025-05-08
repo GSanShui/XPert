@@ -92,7 +92,6 @@ python train_xpert.py --model XPert
                       --mode test
                       --output_profile True
                       --saved_model_path saved_model/l1000_sdst_warm_split.pth
-
 ``` 
 
 If you need to output the `cls` embeddings or attention matrix for downstream analysis, we recommend using the `Infer` mode. Please set the `output_cls_embed` and `output_attention` parameters as needed. The resulting outputs will be stored in the `experiment` directory.
@@ -108,5 +107,4 @@ python train_xpert.py --model XPert
                       --output_cls_embed True
                       --output_attention True
                       --saved_model_path saved_model/l1000_sdst_warm_split.pth
-
 ``` 
