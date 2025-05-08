@@ -1,0 +1,10 @@
+h5py==3.10.0
+matplotlib==3.8.2
+PyYAML==6.0.1
+scikit_learn==1.4.0
+torch==2.1.0+cu121
+torch-geometric==2.6.1
+torchmetrics==1.6.0
+flash_attn==2.6.0.post1
+tqdm==4.66.1
+scanpy==1.9.8
