@@ -17,6 +17,11 @@ The repository is organised as follows:
 - `reproducing/` contains the code for reproducing the analysis results and figures from the paper;
 
 ## Requirements
+
+### OS Requirements
+The package development version is tested on Linux: Ubuntu 20.04 operating systems.
+
+### Python Dependencies
 The XPert network is built using PyTorch. You can use following commands to create conda env with related dependencies.
 ``` 
 conda create -n xpert python=3.9
