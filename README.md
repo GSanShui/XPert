@@ -23,6 +23,12 @@ conda create -n xpert python=3.9
 pip install -r requirements.txt
 ``` 
 
+## Example
+If you just need to quickly test the code with a demo, we provide a small example dataset that you can run using the following command. For testing with the full dataset and reproducing the results presented in the paper, please refer to the next section on [Implementation](#implementation).
+``` 
+bash scripts/train_example.sh
+``` 
+
 ## Implementation
 
 **Note:** Due to file size limitations, some files are not included in this repository. Please refer to [Zenodo](https://zenodo.org/uploads/15357712) and [Figshare] for the complete set of resources.
