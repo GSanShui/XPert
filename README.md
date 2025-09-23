@@ -105,7 +105,7 @@ python train_xpert.py --model XPert
                       --saved_model_path saved_model/l1000_sdst_warm_split.pth
 ``` 
 
-If you need to output the `cls` embeddings or attention matrix for downstream analysis, we recommend using the `Infer` mode. Please set the `output_cls_embed` and `output_attention` parameters as needed. The resulting outputs will be stored in the `experiment` directory.
+If you need to extract `cls` embeddings or attention matrices for downstream analysis, we recommend running the model in `Infer` mode. Set the `output_cls_embed` and `output_attention` parameters accordingly. For step-by-step guidance on attention analysis, refer to the tutorials at `reproducing/fig3/fig3D_egfr_attn_molecule.ipynb` and `reproducing/fig6/Fig6G_differential_atttention_analysis.ipynb`. These notebooks provide reproducible examples of how to interpret attention outputs.
 
 ``` 
 python train_xpert.py --model XPert 
@@ -119,3 +119,4 @@ python train_xpert.py --model XPert
                       --output_attention True
                       --saved_model_path saved_model/l1000_sdst_warm_split.pth
 ``` 
+
