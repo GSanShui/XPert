@@ -43,7 +43,8 @@ dataset:
     num_cell_id: 14
     num_tissue_id: 14
 
-  drug_unimol_path: example_data/example_drugs_unimol_arr.npy
+  # If drug unimol path is not provided, unimol features will be generated from scratch
+  drug_unimol_path: null
 
 
 
