@@ -8,3 +8,7 @@ torchmetrics==1.6.0
 flash_attn==2.6.0.post1
 tqdm==4.66.1
 scanpy==1.9.8
+unimol-tools==0.1.4.post1
+pandas==2.3.0
+dask==2024.7.1
+dask-expr==1.1.9 
