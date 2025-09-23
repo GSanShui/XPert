@@ -8,10 +8,77 @@ from torch.cuda.amp import autocast
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 import scanpy as sc
+import tqdm
+from unimol_tools import UniMolRepr
 
 from metrics import get_metrics_new, get_metrics_infer
 from datasets.MyDataset import MyDataset
 
+
+
+atom2id = {'N': 2,
+         'Se': 3,
+         'I': 4,
+         'As': 5,
+         'Pt': 6,
+         'S': 7,
+         'Sn': 8,
+         'Mg': 9,
+         'P': 10,
+         'Cl': 11,
+         'Au': 12,
+         'F': 13,
+         'Co': 14,
+         'Br': 15,
+         'Si': 16,
+         'O': 17,
+         'H': 18,
+         'B': 19,
+         'C': 20,
+         'Ca': 21,
+         'Hg': 22,
+         'Li':23,
+         "[UNK]":24,
+         "Na":25,
+         'hg_molecule': 0,
+         'molecule': 1}
+
+def generate_unimol_feat(smiles_dict, max_atoms=122):
+    
+    smiles_list = list(smiles_dict.values())
+    clf = UniMolRepr(data_type='molecule', remove_hs=False)
+    unimol_repr = clf.get_repr(smiles_list, return_atomic_reprs=True)
+
+    assert len(unimol_repr['cls_repr']) == len(smiles_list), f"only {len(unimol_repr['cls_repr'])}/{len(smiles_list)} molecule's unimol repr is returned!"
+
+    unimol_feat = {}
+    idx = 0 
+    for k in tqdm(list(smiles_dict.keys()), desc="Wrapping UniMol features"):
+        molecule_feat = unimol_repr['cls_repr'][idx]
+        atom_feat = unimol_repr['atomic_reprs'][idx]
+        atom_symbols = unimol_repr['atomic_symbol'][idx]
+        
+        atom_feat = np.vstack((np.array([molecule_feat,molecule_feat]), atom_feat))
+        atom_symbols = [*['hg_molecule','molecule'],*atom_symbols]
+        atom_symbols_ids = [atom2id[atom] for atom in atom_symbols]
+
+        l = len(atom_feat) 
+        
+        if l < max_atoms:
+            atom_feat_pad = np.pad(atom_feat, ((0, max_atoms - l),(0,0)), 'constant', constant_values=0)
+            atom_symbols_ids_pad = np.pad(atom_symbols_ids, (0, max_atoms - l), 'constant', constant_values=0)
+            input_mask = ([1] * l) + ([0] * (max_atoms - l))
+            
+        else:
+            atom_feat_pad = atom_feat[:max_atoms]
+            atom_symbols_ids_pad = atom_symbols_ids[:max_atoms]
+            input_mask = [1] * max_atoms
+          
+        tmp = np.hstack((np.array(atom_symbols_ids_pad)[:,None], atom_feat_pad))
+        unimol_feat[k] = np.hstack((np.array(input_mask)[:,None], tmp))
+        idx += 1 
+
+    return unimol_feat
 
 
 def load_dataloader(args,config,logger,nfold, return_rawdata=False):
@@ -36,11 +103,17 @@ def load_dataloader(args,config,logger,nfold, return_rawdata=False):
 
 
     if args.drug_feat == 'unimol':
-        drug_feat = np.load(config['dataset']['drug_unimol_path'], allow_pickle=True)
-        max_atom_size = config['dataset']['max_atom_size']
-        if max_atom_size < 122:
-            drug_feat = drug_feat[:, :max_atom_size, :]
-            logger.info(f'Using {max_atom_size} atom')
+        if config['dataset']['drug_unimol_path'] is not None:
+            drug_feat = np.load(config['dataset']['drug_unimol_path'], allow_pickle=True)
+            max_atom_size = config['dataset']['max_atom_size']
+            if max_atom_size < 122:
+                drug_feat = drug_feat[:, :max_atom_size, :]
+                logger.info(f'Using {max_atom_size} atom')
+        else:
+            drug_smis =  np.load(config['dataset']['drug_smi_path'], allow_pickle=True).item()
+            drug_smis_remain = {k:v for k,v in drug_smis.items() if k in data.obs.pert_idx.unique()}
+            logger.info(f"Saved UniMol Feature File is not provide! Generating UniMol feature for {len(drug_smis_remain)}/{len(drug_smis)} molecules....")
+            drug_feat = generate_unimol_feat(drug_smis_remain)
     elif args.drug_feat == 'KPGT':
         drug_feat = np.load(config['dataset']['drug_KPGT_path'], allow_pickle=True).item()
     elif args.drug_feat == 'smi':
@@ -115,11 +188,17 @@ def load_test_dataloader(args,config,logger,nfold):
         # assert False, 'Dataset not found!'
 
     if args.drug_feat == 'unimol':
-        drug_feat = np.load(config['dataset']['drug_unimol_path'], allow_pickle=True)
-        max_atom_size = config['dataset']['max_atom_size']
-        if max_atom_size < 122:
-            drug_feat = drug_feat[:, :max_atom_size, :]
-            logger.info(f'Using {max_atom_size} atom')
+        if config['dataset']['drug_unimol_path'] is not None:
+            drug_feat = np.load(config['dataset']['drug_unimol_path'], allow_pickle=True)
+            max_atom_size = config['dataset']['max_atom_size']
+            if max_atom_size < 122:
+                drug_feat = drug_feat[:, :max_atom_size, :]
+                logger.info(f'Using {max_atom_size} atom')
+        else:
+            drug_smis =  np.load(config['dataset']['drug_smi_path'], allow_pickle=True).item()
+            drug_smis_remain = {k:v for k,v in drug_smis.items() if k in data.obs.pert_idx.unique()}
+            logger.info(f"Saved UniMol Feature File is not provide! Generating UniMol feature for {len(drug_smis_remain)}/{len(drug_smis)} molecules....")
+            drug_feat = generate_unimol_feat(drug_smis_remain)
     elif args.drug_feat == 'KPGT':
         drug_feat = np.load(config['dataset']['drug_KPGT_path'], allow_pickle=True).item()
     elif args.drug_feat == 'smi':
@@ -181,11 +260,17 @@ def load_infer_dataloader(args,config,logger,nfold):
 
 
     if args.drug_feat == 'unimol':
-        drug_feat = np.load(config['dataset']['drug_unimol_path'], allow_pickle=True)
-        max_atom_size = config['dataset']['max_atom_size']
-        if max_atom_size < 122:
-            drug_feat = drug_feat[:, :max_atom_size, :]
-            logger.info(f'Using {max_atom_size} atom')
+        if config['dataset']['drug_unimol_path'] is not None:
+            drug_feat = np.load(config['dataset']['drug_unimol_path'], allow_pickle=True)
+            max_atom_size = config['dataset']['max_atom_size']
+            if max_atom_size < 122:
+                drug_feat = drug_feat[:, :max_atom_size, :]
+                logger.info(f'Using {max_atom_size} atom')
+        else:
+            drug_smis =  np.load(config['dataset']['drug_smi_path'], allow_pickle=True).item()
+            drug_smis_remain = {k:v for k,v in drug_smis.items() if k in data.obs.pert_idx.unique()}
+            logger.info(f"Saved UniMol Feature File is not provide! Generating UniMol feature for {len(drug_smis_remain)}/{len(drug_smis)} molecules....")
+            drug_feat = generate_unimol_feat(drug_smis_remain)
     elif args.drug_feat == 'KPGT':
         drug_feat = np.load(config['dataset']['drug_KPGT_path'], allow_pickle=True).item()
     elif args.drug_feat == 'smi':
@@ -218,6 +303,7 @@ def load_infer_dataloader(args,config,logger,nfold):
     logger.info(f'Test dataloader:{len(test_dataloader)}')
     
     return test_dataloader
+
 
 
 
