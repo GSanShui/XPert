@@ -36,7 +36,7 @@ bash scripts/train_example.sh
 
 ## Implementation
 
-**Note:** Due to file size limitations, some files are not included in this repository. Please refer to [Zenodo](https://zenodo.org/uploads/15357712) and [Figshare] for the complete set of resources.
+**Note:** Due to file size limitations, some files are not included in this repository. Please refer to [Zenodo](https://doi.org/10.5281/zenodo.15357711) and [Figshare](https://doi.org/10.6084/m9.figshare.28955141) for the complete set of resources.
 
 ### Data Format
 1. Paired pre- and post-treatment datasets are stored in `h5ad` format. The post-treatment gene expression data is stored in `adata.X`, while the pre-treatment data is stored in `adata.obsm["X_ctl"]`, and metadata is stored in `adata.obs`. All datasets used for XPert follow this format.
@@ -119,4 +119,5 @@ python train_xpert.py --model XPert
                       --output_attention True
                       --saved_model_path saved_model/l1000_sdst_warm_split.pth
 ``` 
+
 
